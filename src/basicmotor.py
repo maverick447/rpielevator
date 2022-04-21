@@ -6,6 +6,7 @@ import time
 import board
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
+import RPi.GPIO as GPIO
 #import digitalio
 
 busy = False
@@ -13,8 +14,11 @@ kit = MotorKit(i2c=board.I2C())
 #goingUpSwitchButton = digitalio.DigitalInOut(board.D3)
 #goingUpSwitchButton.direction = digitalio.Direction.INPUT
 numTurns = 0
-MAX_TURNS = 185
+MAX_TURNS = 180
 MIN_TURNS = 0
+
+upLed = 16
+downLed = 22
 
 def elevator_go_up():
   global busy
@@ -25,6 +29,8 @@ def elevator_go_up():
   
   global numTurns
   global MAX_TURNS
+  global upLed
+  global downLed
   if  numTurns >= MAX_TURNS:
       printf("Already reached the top\n")
       numTurns = MAX_TURNS
@@ -32,10 +38,15 @@ def elevator_go_up():
       return;
     
   print("Going up\n")
+  GPIO.output(upLed,GPIO.HIGH)
+  GPIO.output(downLed,GPIO.LOW)
+  
   while numTurns <= MAX_TURNS:
     kit.stepper1.onestep(direction=stepper.FORWARD)
     time.sleep(0.005)
     numTurns = numTurns + 1
+  
+  GPIO.output(upLed,GPIO.HIGH)
 
 def elevator_go_down():
     global busy
@@ -46,6 +57,8 @@ def elevator_go_down():
     global numTurns
     global MAX_TURNS
     global MIN_TURNS
+    global upLed
+    global downLed
     
     if  numTurns <= MIN_TURNS:
         print("Already reached the bottom\n")
@@ -61,7 +74,12 @@ def elevator_go_down():
         
 # 
 if __name__ == "__main__":
+    
     print("Hello elevator\n")
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(upLed, GPIO.OUT)
+    GPIO.setup(downLed, GPIO.OUT)
+    GPIO.setwarnings(False)
     while True:
         time.sleep(5.0)
         print("Elevator: Going up....\n")
